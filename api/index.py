@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from services.stock_service import fetch_stock_data
-from models.stock_models import StockResponse
+from _services.stock_service import fetch_stock_data
+from _models.stock_models import StockResponse
 
 app = FastAPI(
     title="台股個股分析 API",
