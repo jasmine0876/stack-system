@@ -1,3 +1,5 @@
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from services.stock_service import fetch_stock_data
 from models.stock_models import StockResponse
 
