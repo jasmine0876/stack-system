@@ -1,34 +1,17 @@
-<!DOCTYPE html>
-<html lang="zh-Hant-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="這是我的第一個網頁，包含一個互動式按鈕與精緻的現代感設計。">
-    <title>我的第一個網頁</title>
-    <!-- 引入外部樣式表 -->
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-    <!-- 主要內容卡片 -->
-    <main class="container">
-        <header>
-            <h1 id="main-title">我的第一個網頁</h1>
-            <p class="description">歡迎來到網頁開發的世界！這是我親手製作的第一個網頁，使用了 HTML、CSS 和 JavaScript 打造而成。</p>
-        </header>
-
-        <!-- 互動按鈕 -->
-        <button id="interactive-btn" class="btn" aria-label="點擊我有驚喜">點擊我有驚喜！</button>
-
-        <!-- 回饋訊息區 -->
-        <div class="response-container">
-            <div id="response-message" class="response-message" role="alert">
-                恭喜！你成功觸發了 JavaScript 互動效果！🎉
-            </div>
-        </div>
-    </main>
-
-    <!-- 引入外部 JavaScript 腳本 -->
-    <script src="script.js"></script>
-</body>
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="台股個股分析儀表板 — 輸入股票代號，快速查看基本資訊、股價走勢、技術指標與白話分析。" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <title>台股分析儀表板 | Taiwan Stock Analyzer</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
