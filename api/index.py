@@ -1,9 +1,3 @@
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
-import os
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 from services.stock_service import fetch_stock_data
 from models.stock_models import StockResponse
 
