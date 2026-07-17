@@ -1,8 +1,17 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
+import os
+import tempfile
 from datetime import datetime
 from typing import Optional
+
+
+# Vercel 的函式程式只能安全寫入暫存目錄。yfinance 會將時區與
+# Yahoo cookie 寫入快取，因此在 serverless 環境將快取改到 /tmp。
+YFINANCE_CACHE_DIR = os.path.join(tempfile.gettempdir(), "py-yfinance")
+os.makedirs(YFINANCE_CACHE_DIR, exist_ok=True)
+yf.set_tz_cache_location(YFINANCE_CACHE_DIR)
 
 
 def compute_rsi(series: pd.Series, period: int = 14) -> Optional[float]:
@@ -126,20 +135,20 @@ def fetch_stock_data(symbol: str, period: str = "1y") -> dict:
         extended_periods = {"3mo": "6mo", "6mo": "1y", "1y": "2y"}
         fetch_period = extended_periods.get(period, "2y")
 
-        hist = ticker.history(period=fetch_period)
+        hist = ticker.history(period=fetch_period, timeout=10, raise_errors=True)
 
         if hist.empty:
             # 嘗試 .TWO（上櫃股票）
             yahoo_symbol = f"{symbol}.TWO"
             ticker = yf.Ticker(yahoo_symbol)
-            hist = ticker.history(period=fetch_period)
+            hist = ticker.history(period=fetch_period, timeout=10, raise_errors=True)
 
             if hist.empty:
                 raise ValueError(f"查無股票代號 {symbol} 的資料，請確認代號是否正確。")
 
-        # 取得股票資訊
-        info = ticker.info
-        stock_name = info.get("longName") or info.get("shortName") or symbol
+        # ticker.info 會再發出一次較慢的 Yahoo 請求，serverless IP 也容易
+        # 在這個端點被限流。股價分析不依賴它，所以不讓名稱查詢阻斷分析。
+        stock_name = symbol
 
         # 計算技術指標（使用全部歷史資料）
         hist["MA5"] = hist["Close"].rolling(window=5).mean()
