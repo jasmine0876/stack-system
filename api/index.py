@@ -1,7 +1,13 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from api._services.stock_service import fetch_stock_data
-from api._models.stock_models import StockResponse
+try:
+    # Vercel 環境 (CWD = api/)
+    from _services.stock_service import fetch_stock_data
+    from _models.stock_models import StockResponse
+except ModuleNotFoundError:
+    # 本地環境 (CWD = 根目錄)
+    from api._services.stock_service import fetch_stock_data
+    from api._models.stock_models import StockResponse
 
 app = FastAPI(
     title="台股個股分析 API",
@@ -22,6 +28,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/api/health")
+def health():
+    """Used to verify that the Vercel Python function started successfully."""
+    return {"status": "ok"}
 
 
 @app.get("/")
