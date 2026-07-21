@@ -2,11 +2,11 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 try:
     # Vercel 環境 (CWD = api/)
-    from _services.stock_service import fetch_stock_data
+    from _services.stock_service import fetch_stock_data, fetch_stock_reason
     from _models.stock_models import StockResponse
 except ModuleNotFoundError:
     # 本地環境 (CWD = 根目錄)
-    from api._services.stock_service import fetch_stock_data
+    from api._services.stock_service import fetch_stock_data, fetch_stock_reason
     from api._models.stock_models import StockResponse
 
 app = FastAPI(
@@ -71,3 +71,25 @@ def get_stock(
             status_code=500,
             detail=f"伺服器發生錯誤，請稍後再試。錯誤訊息：{str(e)}",
         )
+
+
+@app.get("/api/stock/{symbol}/reason")
+def get_stock_reason(symbol: str):
+    """
+    獲取股票今日走向原因（透過 AI 分析最新新聞）。
+    """
+    symbol = symbol.strip()
+    if not symbol:
+        raise HTTPException(status_code=400, detail="請輸入股票代號。")
+
+    try:
+        reason = fetch_stock_reason(symbol)
+        return {"symbol": symbol, "reason": reason}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"伺服器發生錯誤，無法分析原因：{str(e)}",
+        )
+

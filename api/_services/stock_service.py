@@ -5,6 +5,8 @@ import os
 import tempfile
 from datetime import datetime
 from typing import Optional
+from google import genai
+from google.genai import types
 
 
 # Vercel 的函式程式只能安全寫入暫存目錄。yfinance 會將時區與
@@ -240,3 +242,63 @@ def fetch_stock_data(symbol: str, period: str = "1y") -> dict:
         raise
     except Exception as e:
         raise ValueError(f"抓取股票 {symbol} 資料時發生錯誤：{str(e)}")
+
+
+def fetch_stock_reason(symbol: str) -> str:
+    """
+    抓取台股新聞並透過 Gemini 產生今日走向原因的白話分析。
+    """
+    yahoo_symbol = f"{symbol}.TW"
+    try:
+        ticker = yf.Ticker(yahoo_symbol)
+        
+        # 測試是否能抓到這檔股票（如果沒有歷史資料可能是 .TWO）
+        hist = ticker.history(period="1d", timeout=5)
+        if hist.empty:
+            yahoo_symbol = f"{symbol}.TWO"
+            ticker = yf.Ticker(yahoo_symbol)
+
+        news = ticker.news
+        if not news:
+            return "目前沒有關於此股票的近期新聞，無法提供今日走向分析。"
+
+        # 整理新聞內容
+        news_texts = []
+        for article in news[:5]: # 取前 5 則最新新聞
+            title = article.get("title", "")
+            summary = article.get("summary", "")
+            # 有些結構可能放在 content 裡
+            if not title and "content" in article:
+                title = article["content"].get("title", "")
+                summary = article["content"].get("summary", "")
+            if title:
+                news_texts.append(f"標題: {title}\n摘要: {summary}")
+
+        if not news_texts:
+            return "目前沒有關於此股票的近期新聞，無法提供今日走向分析。"
+
+        combined_news = "\n\n".join(news_texts)
+
+        # 呼叫 Gemini API
+        client = genai.Client()
+        prompt = f'''
+請根據以下關於股票代號 {symbol} 的最新新聞，以「繁體中文」寫一段簡短、白話的分析，
+向一般投資新手解釋「這支股票近期（或今日）為什麼會這樣走向」。
+如果新聞中沒有明確的利多或利空，請誠實告知。
+請勿包含任何投資建議，只需陳述事實與合理的推論。
+
+以下是最新新聞：
+{combined_news}
+'''
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+        )
+        
+        return response.text.strip()
+    
+    except Exception as e:
+        if "API key" in str(e) or "client" in str(e).lower() or "credentials" in str(e).lower():
+            return "系統尚未設定 AI API 金鑰，無法提供原因分析。請管理員確認環境變數 `GEMINI_API_KEY` 是否已設定。"
+        raise ValueError(f"分析股票 {symbol} 走向原因時發生錯誤：{str(e)}")
+

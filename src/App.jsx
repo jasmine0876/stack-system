@@ -6,18 +6,26 @@ import PriceChart from './components/PriceChart';
 import VolumeChart from './components/VolumeChart';
 import TechIndicators from './components/TechIndicators';
 import AnalysisSummary from './components/AnalysisSummary';
+import TrendReasonCard from './components/TrendReasonCard';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorMessage from './components/ErrorMessage';
+import { useEffect } from 'react';
 
 export default function App() {
   const { data, loading, error, fetchStock } = useStockData();
   const [currentPeriod, setCurrentPeriod] = useState('1y');
   const [currentSymbol, setCurrentSymbol] = useState('');
+  
+  const [reasonData, setReasonData] = useState(null);
+  const [reasonLoading, setReasonLoading] = useState(false);
+  const [reasonError, setReasonError] = useState(null);
 
   const handleSearch = useCallback(
     (symbol) => {
       setCurrentSymbol(symbol);
       setCurrentPeriod('1y');
+      setReasonData(null);
+      setReasonError(null);
       fetchStock(symbol, '1y');
     },
     [fetchStock]
@@ -32,6 +40,33 @@ export default function App() {
     },
     [currentSymbol, fetchStock]
   );
+
+  useEffect(() => {
+    // 當基本資料載入完成，且有 symbol 時，開始抓取 AI 原因分析
+    if (data?.symbol && data.symbol === currentSymbol) {
+      const fetchReason = async () => {
+        setReasonLoading(true);
+        setReasonError(null);
+        try {
+          const res = await fetch(`/api/stock/${data.symbol}/reason`);
+          if (!res.ok) {
+             const errorData = await res.json().catch(() => null);
+             throw new Error(errorData?.detail || '無法取得原因分析');
+          }
+          const result = await res.json();
+          setReasonData(result.reason);
+        } catch (err) {
+          setReasonError(err.message);
+        } finally {
+          setReasonLoading(false);
+        }
+      };
+      // 如果還沒有抓過這個 symbol 的原因，就去抓
+      if (!reasonData && !reasonLoading && !reasonError) {
+        fetchReason();
+      }
+    }
+  }, [data?.symbol, currentSymbol]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -101,6 +136,13 @@ export default function App() {
 
             {/* Analysis Summary */}
             <AnalysisSummary analysis={data.analysis} />
+            
+            {/* Trend Reason Card (AI) */}
+            <TrendReasonCard 
+              reason={reasonData} 
+              loading={reasonLoading} 
+              error={reasonError} 
+            />
           </div>
         )}
 
