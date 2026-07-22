@@ -280,7 +280,8 @@ def fetch_stock_reason(symbol: str) -> str:
         combined_news = "\n\n".join(news_texts)
 
         # 呼叫 Gemini API
-        client = genai.Client()
+        api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+        client = genai.Client(api_key=api_key)
         prompt = f'''
 請根據以下關於股票代號 {symbol} 的最新新聞，以「繁體中文」寫一段簡短、白話的分析，
 向一般投資新手解釋「這支股票近期（或今日）為什麼會這樣走向」。
