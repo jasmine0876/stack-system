@@ -299,6 +299,10 @@ def fetch_stock_reason(symbol: str) -> str:
     
     except Exception as e:
         if "API key" in str(e) or "client" in str(e).lower() or "credentials" in str(e).lower():
-            return "系統尚未設定 AI API 金鑰，無法提供原因分析。請管理員確認環境變數 `GEMINI_API_KEY` 是否已設定。"
+            api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+            if not api_key:
+                return "系統環境變數中找不到 `GEMINI_API_KEY`，請確認 Vercel 設定並重新發布（Redeploy）。"
+            else:
+                return f"⚠️ 金鑰設定錯誤或無效。目前讀取到的金鑰開頭為「{api_key[:6]}...」，長度為 {len(api_key)} 字元。錯誤細節：{str(e)}"
         raise ValueError(f"分析股票 {symbol} 走向原因時發生錯誤：{str(e)}")
 
