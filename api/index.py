@@ -93,3 +93,20 @@ def get_stock_reason(symbol: str):
             detail=f"伺服器發生錯誤，無法分析原因：{str(e)}",
         )
 
+
+@app.get("/api/models")
+def list_available_models():
+    """用來除錯：列出這把金鑰能使用的所有模型"""
+    from google import genai
+    import os
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return {"error": "找不到金鑰"}
+    try:
+        client = genai.Client(api_key=api_key)
+        models = []
+        for m in client.models.list():
+            models.append(m.name)
+        return {"models": models}
+    except Exception as e:
+        return {"error": str(e)}
