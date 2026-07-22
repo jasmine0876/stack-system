@@ -5,7 +5,8 @@ import os
 import tempfile
 from datetime import datetime
 from typing import Optional
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 
 # Vercel 的函式程式只能安全寫入暫存目錄。yfinance 會將時區與
@@ -280,9 +281,7 @@ def fetch_stock_reason(symbol: str) -> str:
 
         # 呼叫 Gemini API
         api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
+        client = genai.Client(api_key=api_key)
         prompt = f'''
 請根據以下關於股票代號 {symbol} 的最新新聞，以「繁體中文」寫一段簡短、白話的分析，
 向一般投資新手解釋「這支股票近期（或今日）為什麼會這樣走向」。
@@ -292,10 +291,11 @@ def fetch_stock_reason(symbol: str) -> str:
 以下是最新新聞：
 {combined_news}
 '''
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=prompt,
+        )
         
-        if not response.text:
-            return "AI 拒絕了回覆，可能觸發了安全限制。"
         return response.text.strip()
     
     except Exception as e:
